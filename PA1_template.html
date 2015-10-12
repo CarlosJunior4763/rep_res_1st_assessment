@@ -128,6 +128,7 @@ act  &lt;- read.csv('activity.csv') ## get data</code></pre>
 ##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ date    : Factor w/ 61 levels &quot;2012-10-01&quot;,&quot;2012-10-02&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
 ##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...</code></pre>
+<p>Inspection of the data shows the need to extract NA´s steps and also coerse to data format.</p>
 <pre class="r"><code>act$date &lt;- as.Date(as.character(act$date, format =&quot;%Y/%m/%d&quot;)) ## coerse to data format
 actc &lt;- subset(act, !is.na(steps))  ## extract NA´s steps</code></pre>
 </div>

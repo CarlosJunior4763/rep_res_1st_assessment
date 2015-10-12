@@ -47,6 +47,11 @@ nrow(act)
 head(act)
 tail(act)
 str(act)
+```
+
+Inspection of the data shows the need to extract NA´s steps and also coerse to data format.
+
+```{r}
 act$date <- as.Date(as.character(act$date, format ="%Y/%m/%d")) ## coerse to data format
 actc <- subset(act, !is.na(steps))  ## extract NA´s steps
 ```
