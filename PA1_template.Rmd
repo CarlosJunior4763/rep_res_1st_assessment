@@ -1,0 +1,166 @@
+---
+title: "PeerAssignment1"
+author: "Carlosjunior4763"
+date: "Sunday, September 20, 2015"
+output: html_document
+---
+
+## About
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, 
+Nike Fuelband, or Jawbone Up. 
+
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+## Data
+Data for assignment was downloaded from the course web site:
+Dataset: Activity monitoring data [52K]
+
+## Assignment
+Get and analyse data
+* loading and preprocessing data
+* complete missing values
+* data analysis to answer assignement questions
+
+## Loading and preprocessing the data
+
+```{r}
+rm(list=ls()) # clean work area
+
+if(!file.exists('activity.csv')) {  ## get file
+        work <- tempfile()
+        download.file("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",work)
+        unzip(work)
+        unlink(work)}
+act  <- read.csv('activity.csv') ## get data
+```
+
+## inspect data received
+
+```{r}
+summary(act) ## examine data
+nrow(act)
+head(act)
+tail(act)
+str(act)
+act$date <- as.Date(as.character(act$date, format ="%Y/%m/%d")) ## coerse to data format
+actc <- subset(act, !is.na(steps))  ## extract NA´s steps
+```
+
+## What is mean total number of steps taken per day?
+
+Calculate and plot the total number of steps taken per day
+
+```{r}
+steps_date <- aggregate(steps ~ date, actc, sum)
+hist(steps_date$steps, 
+     main = paste("Total Steps / Day"), 
+     col=3, xlab="# Steps")
+```
+
+Calculate and report the mean and median of the total number of steps taken per day
+
+```{r}
+rmean <- mean(steps_date$steps)
+rmedian <- median(steps_date$steps)
+```
+* The mean is  `r mean(steps_date$steps)` 
+* The median is `r median(steps_date$steps)`
+
+## What is the average daily activity pattern?
+
+Calculate and plot the steps per aggregate, taken per day
+
+```{r}
+steps_inter <- aggregate(steps ~ interval, actc, mean)
+
+plot(steps_inter$interval,
+     steps_inter$steps, type="l", 
+     xlab="Interval", ylab="# Steps",
+     main="Average Steps /  Day / Interval")
+```
+
+Which 5-minute interval, on average across all the days in the dataset, 
+contains the maximum number of steps?
+
+```{r}
+inter_max <- steps_inter[which.max(steps_inter$steps),1]
+```
+
+* The maximum number of steps found was `r steps_inter[which.max(steps_inter$steps),1]`
+
+## Imputing missing values
+
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+Identify the incompleted cases
+```{r}
+no_complete   <- sum(!complete.cases(act))   ##  - uses the original file with NAs
+```
+
+* the total number of missing values in the dataset is: `r sum(!complete.cases(act))`
+
+Fill the incompleted cases
+```{r}
+complete_data <- transform(act, steps = ifelse(is.na(act$steps), 
+                steps_inter$steps[match(act$interval, 
+                steps_inter$interval)], act$steps))
+complete_data[as.character(complete_data$date) == "2012-10-01", 1] <- 0
+steps_date_i <- aggregate(steps ~ date, complete_data, sum)
+```
+
+ Calculate new mean and median for imputed data.
+```{r}
+mean_comp <- mean(steps_date_i$steps)
+median_comp <- median(steps_date_i$steps)
+```
+
+* The complete mean is  `r mean(steps_date_i$steps)` 
+* The complete median is `r median(steps_date_i$steps)`
+
+Calculate difference between imputed and non-imputed data.
+```{r}
+mean_diff <- mean_comp - rmean
+```
+* difference between imputed and non-imputed data is: `r mean_comp - rmean`
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```{r}
+# Create a factor variable with two levels (weekday, weekend-day)
+workLT <- as.POSIXlt(act$date, format = "%Y-%m-%d")
+workWD <- workLT$wday
+workWD[workWD == 0] = 0
+workWD[workWD == 6] = 0
+workWD[workWD != 0] = 1
+workWDFactor <- factor(workWD, levels = c(0, 1))
+
+# Add the factor variable to the data
+act$WD <- workWDFactor
+```
+
+Calculate the mean per WD
+```{r}
+stepsWD <- tapply(act$steps, list(act$interval, act$WD), mean, 
+                              na.rm = T)
+```
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+
+```{r}
+par(mfrow = c(2, 1))
+# Display the 2 plots
+with(act, {
+        par(mai = c(0, 1, 1, 0))
+        plot(stepsWD[, 1], type = "l", 
+             main = ("Steps X Interval"), 
+             xaxt = "n", ylab = "Week ends")
+        title = ("# of Steps v.s. Interval")
+        par(mai = c(1, 1, 0, 0))
+        plot(stepsWD[, 2], type = "l", 
+             xlab = "Interval", 
+             ylab = "Week days")})
+```
+
+
